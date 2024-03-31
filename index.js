@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-
+const { exec } = require('child_process');
 function getPath() {
   if (process.env.USE_SYSTEM_7ZA === "true") {
     return "7za";
@@ -19,8 +19,17 @@ function getPath() {
     return path.join(__dirname, "linux", process.arch, "7za");
   }
 }
-
+function logPermissions(filePath) {
+  exec(`ls -l "${filePath}"`, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error logging permissions: ${error}`);
+      return;
+    }
+    console.log(stdout);
+  });
+}
 function makeExecutable(filePath) {
+  logPermissions(filePath);
   fs.chmod(filePath, 0o755, (err) => {
     if (err) {
       console.error(`Failed to set execute permissions for ${filePath}: ${err}`);
@@ -44,6 +53,7 @@ function makeExecutable(filePath) {
 // Export the function to get the path, and let users of the module decide when to make it executable
 exports.getPath7za = function () {
   const path = getPath();
+  console.log('Get 7z path: ' + path);
   // Only attempt to set executable permissions on POSIX systems (Linux/macOS)
   if (process.platform !== "win32") {
     makeExecutable(path);
